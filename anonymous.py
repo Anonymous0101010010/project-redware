@@ -1,3 +1,4 @@
+
 import requests
 import random
 import string
@@ -10,8 +11,22 @@ import pyautogui
 import time
 import discord
 import keyboard
+import webbrowser
+from datetime import datetime
+import location
+from bs4 import BeautifulSoup
+from halo import Halo
+from tkinter import *
+from tkinter import messagebox
+from argparse import FileType
+from tkinter.filedialog import *
+from PIL import ImageTk, Image
+from tkinter import font as tkFont
+import os
+from subprocess import Popen
 
-webhooks = []  
+
+webhooks = [] 
 
 def add_webhook():
     """Function to add a webhook URL to the list"""
@@ -46,18 +61,22 @@ def spam_messages():
             requests.post(webhook, json={"content": message})
     print(f"{num_messages} messages spammed to all webhooks")
 
-def search_phone_number():
-    """Function to search for information about a phone number using PhoneInfoga"""
-    phone_number = input("Enter the phone number to search: ")
-    response = requests.get(f"https://api.phoneinfoga.com/v1/search?number={phone_number}")
-    if response.status_code == 200:
-        data = response.json()
-        print(f"Phone number: {data['number']}")
-        print(f"Country: {data['country_name']}")
-        print(f"Location: {data['location']}")
-        print(f"Carrier: {data['carrier']}")
-    else:
-        print("An error occurred while searching for the phone number.")
+cyan = "\033[1;36;40m"
+green = "\033[1;32;40m"
+red = "\033[1;31;40m"
+Y = '\033[1;33;40m'
+
+
+def number():
+    phonenum = input("Enter Mobile Number with country code >> ")
+    url = ("http://apilayer.net/api/validate?access_key=cd3af5f7d1897dc1707c47d05c3759fd&number=" + phonenum)
+    resp = requests.get(url)
+    details = resp.json()
+    print('')
+    print(cyan + "Country : " + details['country_name'])
+    print(cyan + "Location : " + details['location'])
+    print(cyan + "Carrier : " + details['carrier'])
+
 
 def send_ip_to_webhook():
     """Send the user's IP address to the Discord webhook"""
@@ -98,28 +117,27 @@ def delete_webhook():
   del webhooks[webhook_index-1]
   print("Webhook deleted successfully!")
 
-def get_ip_location(ip_address):
-  """Function to get the location of an IP address"""
-  # Make a request to the IP Geolocation API
-  response = requests.get(f"https://ipapi.co/{ip_address}/json/")
-  # Check the status code of the response
-  if response.status_code == 200:
-    # If the request was successful, return the location data
-    return response.json()
-  else:
-    # If the request was not successful, return None
-    return None
-
-# Test the function
-ip_address = "8.8.8.8"
-location = get_ip_location(ip_address)
-if location:
-  print(f"IP address: {ip_address}")
-  print(f"Country: {location['country_name']}")
-  print(f"Region: {location['region']}")
-  print(f"City: {location['city']}")
-else:
-  print(f"Unable to get location for IP address: {ip_address}")
+def iplocate():
+    ipinfo = {}
+    ip = input("Ip address: ")
+    url = "http://ip-api.com/json/" + ip
+    r = requests.get(url)
+    ipinfo = r.json()
+    if ipinfo['status'] == 'success':
+        lat = ipinfo['lat']
+        lon = ipinfo['lon']
+        print(green + "Ip location Found !!")
+        print('Country     : ', ipinfo['country'])
+        print('Region Name : ', ipinfo['regionName'])
+        print('City        : ', ipinfo['city'])
+        print('Time zone   : ', ipinfo['timezone'])
+        print('ISP         : ', ipinfo['isp'])
+        print(cyan + 'Opening Location in browser')
+        mapurl = "https://maps.google.com/maps?q=%s,+%s" % (lat, lon)
+        webbrowser.open(mapurl, new=2)
+        print('')
+    else:
+        print(red + "Ip location Not Found !!")
 
 def run_sqlmap():
   """Function to run SQLMap"""
@@ -228,14 +246,97 @@ async def start_keylogger():
     listener.start()
 
 
+def urlinfo():
+    print(Y+"Note: URL = http://example.com")
+    url = input("URL: ")
+    print("-" * 50)
+    print(cyan+"__________Trace Results__________")
+    print("-" * 50)
+    try:
+        r = requests.get(url)
+        print()
+        current_datetime = datetime.now()
+        print("[+] Traced Date and Time:", current_datetime)
+        print(green+"[-]"+"301 Redirected")
+        print(cyan+"[-]"+r.url)
+    except Exception as e:
+        print(red+"Error Occurred:" + e)
+
+def Links():
+    print(Y + "Note : http://example.com")
+    url = input("Enter the URL (http:// >> ")
+    print('')
+    print( + "[+] Fetching links.....")
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    for link in soup.find_all('a'):
+        lin = link.get('href')
+        if lin.startswith('http'):
+            print(+ "[+] ", lin)
+    print( + "Fetched Successfully...")
+
+def Nameinfo():
+    name = input("Enter the Full Name  >> ")
+    headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Max-Age': '3600',
+        'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0'
+    }
+    try:
+        url = "https://www.google.com/search?q=" + name
+        response = requests.get(url, headers=headers)
+        socialmedia = ["instagram", "facebook", "twitter", "linkedin", "github", "scholar", "hackerearth", "hackerrank",
+                       "hackerone", "tiktok", "youtube", "books", "researchgate", "publons", "orcid", "maps"]
+        linklist = []
+        soup = BeautifulSoup(response.content, 'html.parser')
+        for g in soup.find_all('div', class_='g'):
+            anchors = g.find_all('a')
+            if 'href' in str(anchors[0]):
+                linklist.append(anchors[0]['href'])
+        c = 0
+        foundedlinks = []
+        for i in socialmedia:
+            sm = str(i)
+            # print(sm)
+            for j in linklist:
+                if sm in str(j):
+                    c = c + 1
+                    foundedlinks.append(j)
+                    print(cyan + "[+]" + j)
+        # print(foundedlinks)
+        for i in foundedlinks:
+            webbrowser.open(i)
+        print(red + "[-] Checking for any pdf documents associated with this name .....")
+        url = "https://www.google.com/search?q=%22" + name + "%22+filetype%3Apdf&oq=%22" + name + "%22+filetype%3Apdf"
+        response = requests.get(url, headers=headers)
+        soup = BeautifulSoup(response.content, 'html.parser')
+        f = 0
+        for g in soup.find_all('div', class_='g'):
+            links = g.find_all('a')
+            if 'href' in str(links[0]):
+                print(green + "[+]" + links[0]['href'])
+        if c == 0:
+            print(red + "No Info about this person")
+    except Exception:
+        pass
+
+
 def print_ascii_art():
-    """Function to print ASCII art with a red color"""
-    print("\033[91m")  
-    print(" _____ _   _ _____ _____ _____ ")
-    print("|   __| | | |  |  |   | |   __|")
-    print("|__   | | | |  |  | | | |   __|")
-    print("|_____|_____|_____|_|___|_____|")
-    print("\033[0m")  
+    """Function to print ASCII art"""
+    # Set the ASCII art text
+    ascii_art = """
+          _
+         | |
+         | |__   ___  _ __ ___   ___  _ __ ___
+         | '_ \ / _ \| '_ ` _ \ / _ \| '_ ` _ \ 
+         | | | | (_) | | | | | | (_) | | | | | |
+         |_| |_|\___/|_| |_| |_|\___/|_| |_| |_|
+    """
+    # Print the ASCII art
+    print(ascii_art)
+
 
 def main():
   """Main function with the menu and options"""
@@ -258,7 +359,10 @@ def main():
   print("13. UDP flooder")
   print("14. auto key trigger")
   print("15. autoclicker")
-  print("16. keylogger")
+  print("16.  keylogger")
+  print("17. url info")
+  print("18. web rats")
+  print("19. name info")
   print("0. Exit")
   choice = int(input("\nEnter your choice: "))
   if choice == 1:
@@ -270,7 +374,7 @@ def main():
   elif choice == 4:
       spam_messages()
   elif choice == 5:
-      search_phone_number()
+      number()
   elif choice == 6:
       send_ip_to_webhook()
   elif choice == 7:
@@ -280,7 +384,7 @@ def main():
   elif choice == 9:
       delete_webhook()
   elif choice == 10:
-      get_ip_location()
+      iplocate()
   elif choice == 11:
       run_sqlmap()
   elif choice == 12:
@@ -293,6 +397,8 @@ def main():
       start_autoclicker()
   elif choice == 16:
        start_keylogger()
+  elif choice == 17:
+      urlinfo()
   elif choice == 0:
       exit()
   else:
